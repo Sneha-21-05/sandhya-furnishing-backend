@@ -1,0 +1,314 @@
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+
+// =========================
+// USER REGISTRATION
+// =========================
+exports.registerUser = async (req, res) => {
+  try {
+    const { fullname, email, phone, password } = req.body;
+
+    if (!fullname || !email || !phone || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = new User({
+      fullname,
+      email,
+      phone,
+      password: hashedPassword,
+    });
+
+    await user.save();
+
+    return res.status(201).json({
+      message: "User registered successfully",
+      userId: user._id,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// =========================
+// USER LOGIN
+// =========================
+exports.loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: {
+        _id: user._id,
+        fullname: user.fullname,
+        email: user.email,
+        phone: user.phone,
+        isEmailVerified: user.isEmailVerified,   // ⭐ IMPORTANT
+        role: user.role,
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// ===============================
+// SEND EMAIL VERIFICATION OTP
+// ===============================
+exports.sendEmailOTP = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    user.emailOTP = otp;
+    user.emailOTPExpiry = Date.now() + 10 * 60 * 1000;
+    await user.save();
+
+    // FIX IS HERE ⬇⬇⬇
+    const { sendEmail } = require("../utils/sendEmail");
+
+    await sendEmail({
+      email: user.email,
+      subject: "Email Verification OTP",
+      message: `Your OTP is: ${otp}`,
+    });
+
+    return res.json({
+      success: true,
+      message: "OTP sent successfully",
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error sending OTP",
+      error: error.message,
+    });
+  }
+};
+
+// ===============================
+// VERIFY EMAIL OTP
+// ===============================
+exports.verifyEmailOTP = async (req, res) => {
+  try {
+    const { otp } = req.body;
+    const userId = req.user.userId;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (!user.emailOTP || !user.emailOTPExpiry) {
+      return res.status(400).json({ success: false, message: "OTP not generated" });
+    }
+
+    // Check expiry
+    if (user.emailOTPExpiry < Date.now()) {
+      return res.status(400).json({ success: false, message: "OTP expired" });
+    }
+
+    // Check match
+    if (user.emailOTP !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
+    }
+
+    // Mark verified
+    user.isEmailVerified = true;
+    user.emailVerifiedAt = new Date();
+
+    // Clear OTP
+    user.emailOTP = null;
+    user.emailOTPExpiry = null;
+
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: "Email verified successfully",
+    });
+
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
+
+// ===============================
+// UPDATE USER PROFILE (WITH IMAGE) - FIXED
+// ===============================
+exports.updateProfile = async (req, res) => {
+  try {
+    const {
+      id,
+      firstName,
+      lastName,
+      phone,
+      age,
+      gender,
+      address,
+      password,
+    } = req.body;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required",
+      });
+    }
+
+    // ✅ SAFE address handling
+    let parsedAddress = {};
+    if (address) {
+      if (typeof address === "string") {
+        try {
+          parsedAddress = JSON.parse(address);
+        } catch {
+          parsedAddress = {};
+        }
+      } else {
+        parsedAddress = address;
+      }
+    }
+
+    const updateData = {
+      firstName,
+      lastName,
+      phone,
+      age,
+      gender,
+      address: parsedAddress,
+    };
+
+    // ✅ SAFE image handling
+    if (req.file && req.file.filename) {
+      updateData.profileImage = `/uploads/${req.file.filename}`;
+    }
+
+    // ✅ Update password only if provided
+    if (password && password.trim() !== "") {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Update Profile Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+exports.getAllUsersAdmin = async (req, res) => {
+  try {
+    const users = await User.find().sort({ createdAt: -1 });
+
+    return res.json({
+      success: true,
+      count: users.length,
+      users,
+    });
+  } catch (error) {
+    console.error("Get Users Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
+exports.getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.json({
+      success: true,
+      user,
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
