@@ -212,8 +212,9 @@ exports.getProductById = async (req, res) => {
     }
 
     res.json({ product });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
   }
 };
 
