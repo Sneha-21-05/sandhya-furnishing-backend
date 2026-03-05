@@ -356,8 +356,7 @@ exports.updateProduct = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Update Product Error:", err);
-
+      console.error("Update Product Error:", err.stack || err.message || err);
     res.status(500).json({
       success: false,
       message: err.message,
