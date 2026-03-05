@@ -314,22 +314,32 @@ exports.updateProduct = async (req, res) => {
     };
 
     console.log("Mapped update data");
+    // Get existing product to preserve specifications
+    const existingProduct = await Product.findById(req.params.id);
 
     if (isLatest !== undefined) {
       updateData.isLatest = isLatest === "true";
     }
 
-    if (extraFields) {
-      try {
-        console.log("Parsing extraFields:", extraFields);
-        updateData.extraFields =
-          typeof extraFields === "string"
-            ? JSON.parse(extraFields)
-            : extraFields;
-      } catch (err) {
-        console.error("extraFields parse error:", err);
-      }
-    }
+let parsedFields = {};
+
+if (extraFields) {
+  try {
+    console.log("Parsing extraFields:", extraFields);
+    parsedFields =
+      typeof extraFields === "string"
+        ? JSON.parse(extraFields)
+        : extraFields;
+  } catch (err) {
+    console.error("extraFields parse error:", err);
+  }
+}
+
+// Merge with existing specifications
+updateData.extraFields = {
+  ...(existingProduct.extraFields || {}),
+  ...parsedFields,
+};    
 
     console.log("Handling Cloudinary files");
     /* ================================
