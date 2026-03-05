@@ -307,7 +307,7 @@ exports.updateProduct = async (req, res) => {
       price_unit,
       category,
       type,
-      colors: colors ? colors.split(",").map(c => c.trim()) : [],
+      colors: colors ? colors.split(",").map((c) => c.trim()) : [],
     };
 
     if (isLatest !== undefined) {
@@ -318,17 +318,21 @@ exports.updateProduct = async (req, res) => {
       updateData.extraFields = JSON.parse(extraFields);
     }
 
-    // ✅ Update sofa images if new ones uploaded
+    /* ================================
+       PRODUCT IMAGES (Cloudinary)
+    ================================= */
+
     if (req.files?.images) {
-      updateData.images = req.files.images.map(
-        (file) => `/uploads/${file.filename}`
-      );
+      updateData.images = req.files.images.map((file) => file.path);
     }
 
-    // ✅ Update dimension images if uploaded
+    /* ================================
+       DIMENSION IMAGES (Cloudinary)
+    ================================= */
+
     if (req.files?.dimensionImages) {
       updateData.dimensionImages = req.files.dimensionImages.map(
-        (file) => `/uploads/${file.filename}`
+        (file) => file.path
       );
     }
 
@@ -353,6 +357,7 @@ exports.updateProduct = async (req, res) => {
 
   } catch (err) {
     console.error("Update Product Error:", err);
+
     res.status(500).json({
       success: false,
       message: err.message,
