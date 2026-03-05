@@ -300,6 +300,8 @@ exports.updateProduct = async (req, res) => {
       extraFields,
     } = req.body;
 
+    console.log("Extracted basic fields");
+
     const updateData = {
       name: product_name,
       price: Number(price),
@@ -311,12 +313,15 @@ exports.updateProduct = async (req, res) => {
       colors: colors ? colors.split(",").map((c) => c.trim()) : [],
     };
 
+    console.log("Mapped update data");
+
     if (isLatest !== undefined) {
       updateData.isLatest = isLatest === "true";
     }
 
     if (extraFields) {
       try {
+        console.log("Parsing extraFields:", extraFields);
         updateData.extraFields =
           typeof extraFields === "string"
             ? JSON.parse(extraFields)
@@ -326,6 +331,7 @@ exports.updateProduct = async (req, res) => {
       }
     }
 
+    console.log("Handling Cloudinary files");
     /* ================================
        PRODUCT IMAGES (Cloudinary)
     ================================= */
@@ -344,6 +350,7 @@ exports.updateProduct = async (req, res) => {
       );
     }
 
+    console.log("Updating DB for ID:", req.params.id);
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       updateData,
