@@ -336,18 +336,46 @@ exports.updateProduct = async (req, res) => {
        PRODUCT IMAGES (Cloudinary)
     ================================= */
 
+    // Parse preserved images from frontend
+    let finalImages = [];
+    if (req.body.existingImages) {
+      try {
+        finalImages = JSON.parse(req.body.existingImages);
+      } catch (err) {
+        console.error("Error parsing existing images:", err);
+      }
+    }
+
+    // Append newly uploaded images
     if (req.files?.images) {
-      updateData.images = req.files.images.map((file) => file.path);
+      const newImages = req.files.images.map((file) => file.path);
+      finalImages = [...finalImages, ...newImages];
+    }
+
+    if (finalImages.length > 0 || req.body.existingImages) {
+      updateData.images = finalImages;
     }
 
     /* ================================
        DIMENSION IMAGES (Cloudinary)
     ================================= */
 
+    let finalDimensionImages = [];
+    if (req.body.existingDimensionImages) {
+      try {
+        finalDimensionImages = JSON.parse(req.body.existingDimensionImages);
+      } catch (err) {
+        console.error("Error parsing existing dimension images:", err);
+      }
+    }
+
     if (req.files?.dimensionImages) {
-      updateData.dimensionImages = req.files.dimensionImages.map(
-        (file) => file.path
-      );
+      const newDimImages = req.files.dimensionImages.map((file) => file.path);
+      finalDimensionImages = [...finalDimensionImages, ...newDimImages];
+    }
+
+    if (finalDimensionImages.length > 0 || req.body.existingDimensionImages) {
+      updateData.dimensionImages = finalDimensionImages;
     }
 
     console.log("Updating DB for ID:", req.params.id);
