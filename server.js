@@ -71,6 +71,26 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/consultations", consultationRoutes);
 app.use("/public", express.static(path.join(__dirname, "public")));
 
+// -------------------------------
+// GLOBAL ERROR HANDLER
+// -------------------------------
+app.use((err, req, res, next) => {
+  console.error("🔥 GLOBAL ERROR CAUGHT:");
+  if (err.message) {
+    console.error("Message:", err.message);
+  }
+  if (err.stack) {
+    console.error("Stack:", err.stack);
+  } else {
+    console.error(err);
+  }
+
+  res.status(500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+    error: err.toString()
+  });
+});
 
 // -------------------------------
 // DB CONNECT
