@@ -286,29 +286,28 @@ exports.deleteProduct = async (req, res) => {
 /* ================= UPDATE ================= */
 exports.updateProduct = async (req, res) => {
   try {
-    console.log("UPDATE BODY:", JSON.stringify(req.body, null, 2));
-    console.log("UPDATE FILES:", JSON.stringify(req.files, null, 2));
+    console.log("UPDATE BODY:", req.body);
     const {
-      name,
+      product_name,
       price,
       description,
       specifications,
       colors,
       price_unit,
-      category,
-      type,
+      category_id,
+      type_id,
       isLatest,
       extraFields,
     } = req.body;
 
     const updateData = {
-      name,
+      name: product_name,
       price: Number(price),
       description,
       specifications,
       price_unit,
-      category,
-      type,
+      category: category_id,
+      type: type_id,
       colors: colors ? colors.split(",").map((c) => c.trim()) : [],
     };
 
@@ -365,15 +364,11 @@ exports.updateProduct = async (req, res) => {
     });
 
   } catch (err) {
+    console.error("UPDATE PRODUCT ERROR:", err);
 
-  console.error("UPDATE PRODUCT ERROR:");
-  console.error(JSON.stringify(err, null, 2));
-  console.error(err.stack);
-
-  res.status(500).json({
-    success: false,
-    message: err.message
-  });
-
-}
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error"
+    });
+  }
 };
