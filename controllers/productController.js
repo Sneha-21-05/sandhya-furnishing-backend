@@ -286,6 +286,8 @@ exports.deleteProduct = async (req, res) => {
 /* ================= UPDATE ================= */
 exports.updateProduct = async (req, res) => {
   try {
+    console.log("UPDATE PRODUCT BODY:", req.body);
+    console.log("UPDATE PRODUCT FILES:", req.files);
     const {
       name,
       price,
@@ -356,10 +358,13 @@ exports.updateProduct = async (req, res) => {
     });
 
   } catch (err) {
-      console.error("Update Product Error:", err.stack || err.message || err);
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
+  console.error("UPDATE PRODUCT ERROR:");
+  console.error(err);
+  console.error(err.stack);
+
+  res.status(500).json({
+    success: false,
+    message: err.message,
+  });
+}
 };
