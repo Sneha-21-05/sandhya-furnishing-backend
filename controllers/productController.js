@@ -8,7 +8,7 @@ const slugify = require("slugify");
 exports.addCategory = async (req, res) => {
   try {
     const { name } = req.body;
-    const image_url = req.file ? `/uploads/${req.file.filename}` : "";
+    const image_url = req.file ? req.file.path : "";
 
     if (!name) {
       return res.status(400).json({
@@ -72,9 +72,7 @@ exports.getCategoryById = async (req, res) => {
 exports.updateCategory = async (req, res) => {
   try {
     const update = { name: req.body.name };
-    if (req.file) {
-      update.image_url = `/uploads/${req.file.filename}`;
-    }
+    update.image_url = req.file.path;
 
     await Category.findByIdAndUpdate(req.params.id, update);
 
@@ -98,7 +96,7 @@ exports.deleteCategory = async (req, res) => {
 
 exports.addType = async (req, res) => {
   const { category_id, type_name } = req.body;
-  const image_url = req.file ? `/uploads/${req.file.filename}` : "";
+  const image_url = req.file ? req.file.path : "";
 
   if (!category_id || !type_name) {
     return res.status(400).json({ success: false });
@@ -122,7 +120,7 @@ exports.getTypesByCategory = async (req, res) => {
 
 exports.updateType = async (req, res) => {
   const update = { type_name: req.body.type_name };
-  if (req.file) update.image_url = `/uploads/${req.file.filename}`;
+  if (req.file) update.image_url = req.file.path;
 
   await ProductType.findByIdAndUpdate(req.params.id, update);
   res.json({ success: true });
@@ -322,25 +320,25 @@ exports.updateProduct = async (req, res) => {
       updateData.isLatest = isLatest === "true";
     }
 
-let parsedFields = {};
+    let parsedFields = {};
 
-if (extraFields) {
-  try {
-    console.log("Parsing extraFields:", extraFields);
-    parsedFields =
-      typeof extraFields === "string"
-        ? JSON.parse(extraFields)
-        : extraFields;
-  } catch (err) {
-    console.error("extraFields parse error:", err);
-  }
-}
+    if (extraFields) {
+      try {
+        console.log("Parsing extraFields:", extraFields);
+        parsedFields =
+          typeof extraFields === "string"
+            ? JSON.parse(extraFields)
+            : extraFields;
+      } catch (err) {
+        console.error("extraFields parse error:", err);
+      }
+    }
 
-// Merge with existing specifications
-updateData.extraFields = {
-  ...(existingProduct.extraFields || {}),
-  ...parsedFields,
-};    
+    // Merge with existing specifications
+    updateData.extraFields = {
+      ...(existingProduct.extraFields || {}),
+      ...parsedFields,
+    };
 
     console.log("Handling Cloudinary files");
     /* ================================
