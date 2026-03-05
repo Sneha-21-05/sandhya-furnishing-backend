@@ -161,13 +161,12 @@ exports.addProduct = async (req, res) => {
     } = req.body;
 
     const images = req.files?.images
-      ? req.files.images.map((f) => `/uploads/${f.filename}`)
+      ? req.files.images.map((f) => f.path)
       : [];
 
     const dimensionImages = req.files?.dimensionImages
-      ? req.files.dimensionImages.map((f) => `/uploads/${f.filename}`)
+      ? req.files.dimensionImages.map((f) => f.path)
       : [];
-
     const product = await Product.create({
       name: product_name,
       price,
