@@ -317,7 +317,14 @@ exports.updateProduct = async (req, res) => {
     }
 
     if (extraFields) {
-      updateData.extraFields = JSON.parse(extraFields);
+      try {
+        updateData.extraFields =
+          typeof extraFields === "string"
+            ? JSON.parse(extraFields)
+            : extraFields;
+      } catch (err) {
+        console.error("extraFields parse error:", err);
+      }
     }
 
     /* ================================
