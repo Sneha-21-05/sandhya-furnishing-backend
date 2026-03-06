@@ -1,9 +1,26 @@
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
+const User = require("../models/User");
+const { sendEmail } = require("../utils/sendEmail");
 
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
+
+const notifyUserEmail = async (userId, subject, message) => {
+  try {
+    const user = await User.findById(userId);
+    if (user && user.email) {
+      await sendEmail({
+        email: user.email,
+        subject,
+        message: `Hi ${user.name || 'Customer'},\n\n${message}\n\nThank you,\nSandhya Furnishing`
+      });
+    }
+  } catch (error) {
+    console.error("Email Sending Error:", error);
+  }
+};
 
 exports.createOrder = async (req, res) => {
   try {
@@ -54,6 +71,12 @@ exports.createOrder = async (req, res) => {
     });
 
     await Cart.deleteMany({ userId });
+
+    await notifyUserEmail(
+      userId,
+      "Order Placed Successfully",
+      `Your order (ID: ${order._id}) has been placed successfully. Thank you for shopping with us!\n\nTotal Amount: ₹${grandTotal}`
+    );
 
     return res.json({
       success: true,
@@ -231,6 +254,12 @@ exports.updateOrderStatus = async (req, res) => {
 
     await order.save();
 
+    await notifyUserEmail(
+      order.userId,
+      `Order Status Update: ${status}`,
+      `Your order (ID: ${order._id}) status has been updated to: ${status}.\n\nMessage: ${message || 'No additional message.'}`
+    );
+
     return res.json({
       success: true,
       message: "Order status updated",
@@ -302,6 +331,12 @@ exports.updateOrderQuote = async (req, res) => {
     });
 
     await order.save();
+
+    await notifyUserEmail(
+      order.userId,
+      "Quote Finalized - Payment Required",
+      `Good news! Your custom quote for order (ID: ${order._id}) has been finalized.\n\nTotal to pay: ₹${finalGrandTotal.toLocaleString('en-IN')}.\nPlease log in to your account and complete the payment to confirm your order.`
+    );
 
     return res.json({
       success: true,
@@ -527,6 +562,12 @@ exports.cancelOrderAdmin = async (req, res) => {
 
     await order.save();
 
+    await notifyUserEmail(
+      order.userId,
+      "Order Cancelled",
+      `We regret to inform you that your order (ID: ${order._id}) has been cancelled by our administration.\n\nReason: ${reason || "No reason provided."}\nIf you have already paid, a refund will be initiated shortly.`
+    );
+
     return res.json({
       success: true,
       message: "Order cancelled successfully",
@@ -570,6 +611,12 @@ exports.payQuoteUser = async (req, res) => {
     });
 
     await order.save();
+
+    await notifyUserEmail(
+      order.userId,
+      "Payment Received - Order Confirmed",
+      `We have received your payment of ₹${order.grandTotal.toLocaleString('en-IN')} via ${paymentMethod} for your custom order (ID: ${order._id}).\n\nYour order is now Confirmed and will be processed soon.`
+    );
 
     return res.json({
       success: true,
@@ -728,6 +775,12 @@ exports.createQuoteOrder = async (req, res) => {
 
     await Cart.deleteMany({ userId });
 
+    await notifyUserEmail(
+      userId,
+      "Quote Request Received",
+      `We have received your custom size quote request for order (ID: ${order._id}).\n\nOur team will review your requirements and provide a finalized price shortly. You will be notified once the quote is ready.`
+    );
+
     return res.json({
       success: true,
       message: "Quote request submitted",
@@ -776,6 +829,12 @@ exports.createCODOrder = async (req, res) => {
     });
 
     await Cart.deleteMany({ userId });
+
+    await notifyUserEmail(
+      userId,
+      "Order Placed Successfully (COD)",
+      `Your Cash on Delivery (COD) order (ID: ${order._id}) has been placed successfully. Thank you for shopping with us!\n\nTotal Amount: ₹${grandTotal}`
+    );
 
     return res.json({
       success: true,

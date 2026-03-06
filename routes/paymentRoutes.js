@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const razorpay = require("../config/razorpay");
+const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const auth = require("../middleware/authMiddleware");
 const Order = require("../models/Order");
@@ -10,6 +10,16 @@ const Cart = require("../models/Cart");
 router.post("/create-order", auth, async (req, res) => {
   try {
     const { amount } = req.body; // cart total
+
+    // Initialize inside the route so it doesn't crash server boot
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(500).json({ success: false, message: "Razorpay keys are missing." });
+    }
+
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
 
     const options = {
       amount: amount * 100, // convert to paise
