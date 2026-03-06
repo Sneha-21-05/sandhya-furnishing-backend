@@ -21,6 +21,7 @@ const productRoutes = require("./routes/productRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const consultationRoutes = require("./routes/consultationRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 // -------------------------------
 // APP INIT
@@ -69,6 +70,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/consultations", consultationRoutes);
+app.use("/api/payment", paymentRoutes);
 app.use("/public", express.static(path.join(__dirname, "public")));
 
 // -------------------------------
