@@ -72,7 +72,9 @@ exports.getCategoryById = async (req, res) => {
 exports.updateCategory = async (req, res) => {
   try {
     const update = { name: req.body.name };
-    update.image_url = req.file.path;
+    if (req.file) {
+      update.image_url = req.file.path;
+    }
 
     await Category.findByIdAndUpdate(req.params.id, update);
 
