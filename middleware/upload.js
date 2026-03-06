@@ -12,7 +12,12 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "sandhya-furnishing",
-    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    format: async (req, file) => {
+      // Allow specific formats or default to 'png'
+      const allowedFormats = ["jpg", "jpeg", "png", "webp"];
+      const ext = file.mimetype.split("/")[1];
+      return allowedFormats.includes(ext) ? ext : "png";
+    },
   },
 });
 
