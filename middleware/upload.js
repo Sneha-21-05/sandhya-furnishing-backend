@@ -14,7 +14,7 @@ const storage = new CloudinaryStorage({
     folder: "sandhya-furnishing",
     format: async (req, file) => {
       // Allow specific formats or default to 'png'
-      const allowedFormats = ["jpg", "jpeg", "png", "webp"];
+      const allowedFormats = ["jpg", "jpeg", "png", "webp", "avif"];
       const ext = file.mimetype.split("/")[1];
       return allowedFormats.includes(ext) ? ext : "png";
     },
