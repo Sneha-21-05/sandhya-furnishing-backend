@@ -762,7 +762,7 @@ exports.createQuoteOrder = async (req, res) => {
       paymentMethod: "quote_request",
       subtotal,
       platformFee,
-      grandTotal: "To Be Decided",
+      grandTotal: 0,
       currentStatus: "Pending Quote",
       trackingHistory: [
         {
