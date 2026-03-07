@@ -17,10 +17,8 @@ router.post("/create-order", auth, async (req, res) => {
 
     const orderId = "order_" + Date.now() + "_" + crypto.randomBytes(4).toString("hex");
 
-    const isSandbox = process.env.NODE_ENV !== "production";
-    const apiUrl = isSandbox
-      ? 'https://sandbox.cashfree.com/pg/orders'
-      : 'https://api.cashfree.com/pg/orders';
+    // Force Sandbox Mode for testing
+    const apiUrl = 'https://sandbox.cashfree.com/pg/orders';
 
     const options = {
       method: "POST",
@@ -67,10 +65,8 @@ router.post("/verify-payment", auth, async (req, res) => {
   try {
     const { order_id, orderData } = req.body; // orderData comes from FE
 
-    const isSandbox = process.env.NODE_ENV !== "production";
-    const apiUrl = isSandbox
-      ? `https://sandbox.cashfree.com/pg/orders/${order_id}/payments`
-      : `https://api.cashfree.com/pg/orders/${order_id}/payments`;
+    // Force Sandbox Mode for testing
+    const apiUrl = `https://sandbox.cashfree.com/pg/orders/${order_id}/payments`;
 
     const options = {
       method: "GET",
