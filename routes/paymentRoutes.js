@@ -11,7 +11,8 @@ router.post("/create-order", auth, async (req, res) => {
     const { amount, customerDetails = {} } = req.body; // cart total and user info
 
     if (!process.env.CASHFREE_APP_ID || !process.env.CASHFREE_SECRET_KEY) {
-      return res.status(500).json({ success: false, message: "Cashfree keys are missing in backend environment variables." });
+      console.error("Cashfree keys are missing in environment variables.");
+      return res.json({ success: false, message: "Server misconfiguration: Cashfree keys are missing." });
     }
 
     const orderId = "order_" + Date.now() + "_" + crypto.randomBytes(4).toString("hex");
@@ -47,7 +48,7 @@ router.post("/create-order", auth, async (req, res) => {
 
     if (!response.ok) {
       console.error("Cashfree Create Error:", data);
-      return res.status(500).json({ success: false, message: data.message || "Failed to create Cashfree order" });
+      return res.json({ success: false, message: data.message || "Failed to create Cashfree order. Verify your keys." });
     }
 
     res.json({
