@@ -236,12 +236,12 @@ exports.updateOrderStatus = async (req, res) => {
       status !== "Cancelled" &&
       newIndex !== currentIndex + 1
     ) {
-      console.error("BLOCKING INVALID TRANSITION!");
-      // TEMPORARILY DISABLED 400 GUARD to track down phantom crash 
-      // return res.status(400).json({
-      //   success: false,
-      //   message: "Invalid status transition",
-      // });
+      console.error("BLOCKING INVALID TRANSITION!", { currentDbStatus: order.currentStatus, status, currentIndex, newIndex });
+
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status transition. Cannot jump from ${order.currentStatus} to ${status}.`,
+      });
     }
 
     // 🚫 Cannot cancel after Delivered
@@ -344,7 +344,8 @@ exports.updateOrderQuote = async (req, res) => {
 
     await order.save();
 
-    await notifyUserEmail(
+    // Send email silently in the background (fire-and-forget) to prevent SMTP lag from hanging the UI
+    notifyUserEmail(
       order.userId,
       "Quote Finalized - Payment Required",
       `Good news! Your custom quote for order (ID: ${order._id}) has been finalized.\n\nTotal to pay: ₹${finalGrandTotal.toLocaleString('en-IN')}.\nPlease log in to your account and complete the payment to confirm your order.`
