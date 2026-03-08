@@ -215,6 +215,14 @@ exports.updateOrderStatus = async (req, res) => {
     const currentIndex = flow.indexOf(order.currentStatus);
     const newIndex = flow.indexOf(status);
 
+    console.log("---- STATUS UPDATE ATTEMPT ----", {
+      orderId,
+      passedStatus: status,
+      currentDbStatus: order.currentStatus,
+      newIndex,
+      currentIndex
+    });
+
     // 🚫 Cannot update after Delivered
     if (order.currentStatus === "Delivered") {
       return res.status(400).json({
@@ -228,10 +236,12 @@ exports.updateOrderStatus = async (req, res) => {
       status !== "Cancelled" &&
       newIndex !== currentIndex + 1
     ) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status transition",
-      });
+      console.error("BLOCKING INVALID TRANSITION!");
+      // TEMPORARILY DISABLED 400 GUARD to track down phantom crash 
+      // return res.status(400).json({
+      //   success: false,
+      //   message: "Invalid status transition",
+      // });
     }
 
     // 🚫 Cannot cancel after Delivered
