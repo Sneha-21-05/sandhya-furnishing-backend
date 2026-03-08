@@ -387,3 +387,88 @@ exports.getMe = async (req, res) => {
     });
   }
 };
+
+// ===============================
+// FORGOT PASSWORD OTP
+// ===============================
+exports.forgotPasswordOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    user.emailOTP = otp;
+    user.emailOTPExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save();
+
+    const { sendEmail } = require("../utils/sendEmail");
+    await sendEmail({
+      email: user.email,
+      subject: "Password Reset OTP - Sandhya Furnishing",
+      message: `Your password reset OTP is: ${otp}\n\nThis OTP is valid for 10 minutes.`,
+    });
+
+    return res.json({
+      success: true,
+      message: "Password reset OTP sent to your email",
+    });
+  } catch (error) {
+    console.error("Forgot Password Error:", error);
+    return res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
+// ===============================
+// RESET PASSWORD
+// ===============================
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ success: false, message: "Email, OTP, and new password are required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (!user.emailOTP || !user.emailOTPExpiry) {
+      return res.status(400).json({ success: false, message: "OTP not requested or already used" });
+    }
+
+    if (user.emailOTPExpiry < Date.now()) {
+      return res.status(400).json({ success: false, message: "OTP has expired. Please request a new one." });
+    }
+
+    if (user.emailOTP !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword;
+    user.emailOTP = null;
+    user.emailOTPExpiry = null;
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: "Password has been reset successfully. You can now login.",
+    });
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    return res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
