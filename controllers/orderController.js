@@ -9,16 +9,29 @@ const path = require("path");
 
 exports.notifyUserEmail = async (userId, subject, message) => {
   try {
+    console.log("---- NOTIFY USER EMAIL TRIGGERED ----", { userId });
     const user = await User.findById(userId);
-    if (user && user.email) {
-      await sendEmail({
-        email: user.email,
-        subject,
-        message: `Hi ${user.name || 'Customer'},\n\n${message}\n\nThank you,\nSandhya Furnishing`
-      });
+
+    if (!user) {
+      console.error("notifyUserEmail Failed: User not found in DB for ID:", userId);
+      return;
     }
+
+    if (!user.email) {
+      console.warn("notifyUserEmail Aborted: User exists but lacks an email address:", userId);
+      return;
+    }
+
+    console.log("notifyUserEmail: Attempting to send via Nodemailer to:", user.email, "Subject:", subject);
+    await sendEmail({
+      email: user.email,
+      subject,
+      message: `Hi ${user.name || 'Customer'},\n\n${message}\n\nThank you,\nSandhya Furnishing`
+    });
+    console.log(`notifyUserEmail: SUCCESS! Email sent to ${user.email}`);
+
   } catch (error) {
-    console.error("Email Sending Error:", error);
+    console.error("Email Sending Error (Nodemailer Crash):", error);
   }
 };
 

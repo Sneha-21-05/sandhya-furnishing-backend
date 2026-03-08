@@ -37,7 +37,8 @@ router.post("/create-order", auth, async (req, res) => {
         customer_details: {
           customer_id: req.user.userId.toString(),
           customer_phone: customerDetails.phone || "9999999999",
-          customer_name: customerDetails.name || "Customer"
+          customer_name: customerDetails.name || "Customer",
+          customer_email: customerDetails.email || "support@sandhyafurnishing.com"
         }
       })
     };
