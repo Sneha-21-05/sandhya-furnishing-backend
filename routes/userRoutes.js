@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/authMiddleware");
+const upload = require("../middleware/upload");
 
 const {
   registerUser,
@@ -18,7 +19,7 @@ router.post("/login", loginUser);
 router.get("/me", auth, getMe);
 
 // PROFILE
-router.put("/update-profile", auth, updateProfile);
+router.put("/update-profile", auth, upload.single("profileImage"), updateProfile);
 
 // EMAIL VERIFICATION ⭐
 router.post("/verify-email/send", auth, sendEmailOTP);
