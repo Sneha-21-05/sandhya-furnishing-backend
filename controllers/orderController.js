@@ -26,7 +26,7 @@ exports.notifyUserEmail = async (userId, subject, message) => {
     await sendEmail({
       email: user.email,
       subject,
-      message: `Hi ${user.name || 'Customer'},\n\n${message}\n\nThank you,\nSandhya Furnishing`
+      message: `Hi ${user.fullname || user.firstName || 'Customer'},\n\n${message}\n\nThank you,\nSandhya Furnishing`
     });
     console.log(`notifyUserEmail: SUCCESS! Email sent to ${user.email}`);
 
