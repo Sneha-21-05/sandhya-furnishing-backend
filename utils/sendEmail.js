@@ -1,27 +1,20 @@
-const nodemailer = require("nodemailer");
-
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const axios = require("axios");
 
 exports.sendEmail = async ({ email, subject, message }) => {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    throw new Error("SERVER CONFIG ERROR: Missing EMAIL_USER or EMAIL_PASS environment variables. Please add them to your Render dashboard.");
-  }
+  try {
+    const response = await axios.post("https://sandhya-furnishing-frontend.vercel.app/api/send-email", {
+      email,
+      subject,
+      message,
+    });
 
-  return transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject,
-    text: message,
-  });
+    if (!response.data.success) {
+      throw new Error(response.data.message || "Unknown error from Vercel email relay");
+    }
+
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.message || error.message;
+    throw new Error(`Failed to relay email via Vercel: ${errorMsg}`);
+  }
 };
