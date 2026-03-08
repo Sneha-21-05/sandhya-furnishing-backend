@@ -11,13 +11,17 @@ const {
   getAllUsersAdmin,
   getMe,
   sendEmailOTP,
-  verifyEmailOTP
+  verifyEmailOTP,
+  forgotPasswordOTP,
+  resetPassword
 } = require("../controllers/userController");
 
-// AUTH
+// User routes
 router.post("/send-signup-otp", sendSignupOTP);
 router.post("/verify-signup-otp", verifySignupOTP);
 router.post("/login", loginUser);
+router.post("/forgot-password", forgotPasswordOTP);
+router.post("/reset-password", resetPassword);
 router.get("/me", auth, getMe);
 
 // PROFILE
