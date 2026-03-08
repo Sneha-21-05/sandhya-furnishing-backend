@@ -4,7 +4,8 @@ const auth = require("../middleware/authMiddleware");
 const upload = require("../middleware/upload");
 
 const {
-  registerUser,
+  sendSignupOTP,
+  verifySignupOTP,
   loginUser,
   updateProfile,
   getAllUsersAdmin,
@@ -14,7 +15,8 @@ const {
 } = require("../controllers/userController");
 
 // AUTH
-router.post("/register", registerUser);
+router.post("/send-signup-otp", sendSignupOTP);
+router.post("/verify-signup-otp", verifySignupOTP);
 router.post("/login", loginUser);
 router.get("/me", auth, getMe);
 

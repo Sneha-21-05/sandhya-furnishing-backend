@@ -3,9 +3,9 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 // =========================
-// USER REGISTRATION
+// SEND SIGNUP OTP
 // =========================
-exports.registerUser = async (req, res) => {
+exports.sendSignupOTP = async (req, res) => {
   try {
     const { fullname, email, phone, password } = req.body;
 
@@ -13,28 +13,103 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "Email already registered" });
+    let existingUser = await User.findOne({ email });
+
+    // If active user exists, prevent signup
+    if (existingUser && existingUser.isEmailVerified) {
+      return res.status(400).json({ message: "Email already registered and verified." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-    const user = new User({
-      fullname,
-      email,
-      phone,
-      password: hashedPassword,
+    let user;
+    if (existingUser && !existingUser.isEmailVerified) {
+      // Overwrite unverified ghost account
+      existingUser.fullname = fullname;
+      existingUser.phone = phone;
+      existingUser.password = hashedPassword;
+      existingUser.emailOTP = otp;
+      existingUser.emailOTPExpiry = otpExpiry;
+      user = await existingUser.save();
+    } else {
+      // Create new unverified account
+      user = new User({
+        fullname,
+        email,
+        phone,
+        password: hashedPassword,
+        isEmailVerified: false,
+        emailOTP: otp,
+        emailOTPExpiry: otpExpiry,
+      });
+      await user.save();
+    }
+
+    const { sendEmail } = require("../utils/sendEmail");
+    await sendEmail({
+      email: user.email,
+      subject: "Verify Your Email - Sandhya Furnishing",
+      message: `Your account verification OTP is: ${otp}\n\nThis OTP is valid for 10 minutes.`,
     });
 
-    await user.save();
-
-    return res.status(201).json({
-      message: "User registered successfully",
-      userId: user._id,
+    return res.status(200).json({
+      success: true,
+      message: "OTP sent successfully to your email.",
+      tempUserId: user._id,
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// =========================
+// VERIFY SIGNUP OTP
+// =========================
+exports.verifySignupOTP = async (req, res) => {
+  try {
+    const { tempUserId, otp } = req.body;
+
+    if (!tempUserId || !otp) {
+      return res.status(400).json({ success: false, message: "User ID and OTP required" });
+    }
+
+    const user = await User.findById(tempUserId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User session expired. Try signing up again." });
+    }
+
+    if (!user.emailOTP || !user.emailOTPExpiry) {
+      return res.status(400).json({ success: false, message: "OTP not generated or already verified." });
+    }
+
+    if (user.emailOTPExpiry < Date.now()) {
+      return res.status(400).json({ success: false, message: "OTP has expired. Please request a new one." });
+    }
+
+    if (user.emailOTP !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid OTP. Please try again." });
+    }
+
+    // Mark as verified
+    user.isEmailVerified = true;
+    user.emailVerifiedAt = new Date();
+    user.emailOTP = null;
+    user.emailOTPExpiry = null;
+    await user.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Account verified successfully! You can now log in.",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
       message: "Server error",
       error: error.message,
     });
