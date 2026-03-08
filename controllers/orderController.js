@@ -7,7 +7,7 @@ const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
 
-const notifyUserEmail = async (userId, subject, message) => {
+exports.notifyUserEmail = async (userId, subject, message) => {
   try {
     const user = await User.findById(userId);
     if (user && user.email) {
@@ -72,7 +72,8 @@ exports.createOrder = async (req, res) => {
 
     await Cart.deleteMany({ userId });
 
-    await notifyUserEmail(
+    // Send email silently in the background
+    exports.notifyUserEmail(
       userId,
       "Order Placed Successfully",
       `Your order (ID: ${order._id}) has been placed successfully. Thank you for shopping with us!\n\nTotal Amount: ₹${grandTotal}`
@@ -266,7 +267,7 @@ exports.updateOrderStatus = async (req, res) => {
     await order.save();
 
     // Send email silently in the background (fire-and-forget) to prevent SMTP lag from hanging the UI
-    notifyUserEmail(
+    exports.notifyUserEmail(
       order.userId,
       `Order Status Update: ${status}`,
       `Your order (ID: ${order._id}) status has been updated to: ${status}.\n\nMessage: ${message || 'No additional message.'}`
@@ -345,7 +346,7 @@ exports.updateOrderQuote = async (req, res) => {
     await order.save();
 
     // Send email silently in the background (fire-and-forget) to prevent SMTP lag from hanging the UI
-    notifyUserEmail(
+    exports.notifyUserEmail(
       order.userId,
       "Quote Finalized - Payment Required",
       `Good news! Your custom quote for order (ID: ${order._id}) has been finalized.\n\nTotal to pay: ₹${finalGrandTotal.toLocaleString('en-IN')}.\nPlease log in to your account and complete the payment to confirm your order.`
@@ -788,7 +789,8 @@ exports.createQuoteOrder = async (req, res) => {
 
     await Cart.deleteMany({ userId });
 
-    await notifyUserEmail(
+    // Fire-and-forget email dispatch
+    exports.notifyUserEmail(
       userId,
       "Quote Request Received",
       `We have received your custom size quote request for order (ID: ${order._id}).\n\nOur team will review your requirements and provide a finalized price shortly. You will be notified once the quote is ready.`

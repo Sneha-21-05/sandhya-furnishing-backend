@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const auth = require("../middleware/authMiddleware");
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
+const { notifyUserEmail } = require("../controllers/orderController");
 
 /* ===================== CREATE ORDER ===================== */
 router.post("/create-order", auth, async (req, res) => {
@@ -114,6 +115,13 @@ router.post("/verify-payment", auth, async (req, res) => {
 
     // Clear cart
     await Cart.deleteMany({ userId: req.user.userId });
+
+    // Fire-and-forget email dispatch
+    notifyUserEmail(
+      req.user.userId,
+      "Order Confirmed - Payment Successful",
+      `Great news! We have successfully received your online payment.\n\nYour order (ID: ${newOrder._id}) is now Confirmed and will begin Processing shortly.\n\nThank you for shopping with Sandhya Furnishing!`
+    );
 
     return res.json({
       success: true,
