@@ -183,6 +183,7 @@ exports.updateOrderStatus = async (req, res) => {
     const flow = [
       "Pending",
       "Pending Quote",
+      "Pending Payment",
       "Confirmed",
       "Processing",
       "Packed",
