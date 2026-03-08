@@ -265,7 +265,8 @@ exports.updateOrderStatus = async (req, res) => {
 
     await order.save();
 
-    await notifyUserEmail(
+    // Send email silently in the background (fire-and-forget) to prevent SMTP lag from hanging the UI
+    notifyUserEmail(
       order.userId,
       `Order Status Update: ${status}`,
       `Your order (ID: ${order._id}) status has been updated to: ${status}.\n\nMessage: ${message || 'No additional message.'}`
