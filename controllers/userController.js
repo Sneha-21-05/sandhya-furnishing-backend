@@ -62,7 +62,7 @@ exports.sendSignupOTP = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: error.message || "Failed to send OTP to your email.",
       error: error.message,
     });
   }
