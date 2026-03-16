@@ -2,7 +2,6 @@ const Category = require("../models/Category");
 const ProductType = require("../models/ProductType");
 const Product = require("../models/Product");
 const slugify = require("slugify");
-/* ================= CATEGORY ================= */
 /* ================= CATEGORY CONTROLLERS ================= */
 
 exports.addCategory = async (req, res) => {
