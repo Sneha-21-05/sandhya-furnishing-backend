@@ -86,8 +86,8 @@ exports.createRefurbishmentInquiry = async (req, res) => {
       services = typeof refurbishServices === 'string' ? [refurbishServices] : [];
     }
 
-    // Process uploaded images
-    const imagePaths = req.files ? req.files.map((file) => `/uploads/${file.filename}`) : [];
+    // Process uploaded images (Cloudinary URLs are in file.path)
+    const imagePaths = req.files ? req.files.map((file) => file.path) : [];
 
     // Format the first message string
     const messageText = `Requested Refurbishment for existing frame.\nServices: ${services.join(', ')}\nDimensions: ${frameDimensions}\nFabric: ${fabricPreference}\nNotes: ${additionalNotes}`;
